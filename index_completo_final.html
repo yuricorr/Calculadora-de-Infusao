@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora de Infusões - UTI</title>
+  <style>
+    body { font-family: sans-serif; background: #f8f9fa; margin: 0; }
+    nav { display: flex; background: #0056b3; }
+    .tab {
+      flex: 1; padding: 1em; cursor: pointer; color: white;
+      background: #0056b3; text-align: center; border: none; outline: none; font-weight: bold;
+    }
+    .tab.active { background: #007bff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+    th, td { padding: 0.5em; border: 1px solid #dee2e6; text-align: center; }
+    th { background: #e9ecef; }
+    input, select { width: 100%; padding: 0.5em; margin-top: 0.5em; margin-bottom: 1em; }
+  </style>
+</head>
+<body>
+<div style="background: #fff3cd; color: #856404; padding: 1em; text-align: center; font-weight: bold; border-bottom: 1px solid #ffeeba;">
+  ⚠️ Esses cálculos estão com base nas diluições já instituídas anteriormente por protocolo institucional.
+</div>
+<nav>
+  <button class="tab active" onclick="showTab('tabela')">Tabela</button>
+  <button class="tab" onclick="showTab('conversor')">Conversor</button>
+</nav>
+<div id="tabela" style="display:block; padding: 1em; max-width: 900px; margin: auto;">
+  <h2>Calculadora de Infusões - UTI</h2>
+  <label for="peso">Peso do paciente (kg):</label>
+  <input type="number" id="peso" value="70" />
+  <div id="tabela-container"></div>
+</div>
+<div id="conversor" style="display:none; padding: 1em; max-width: 600px; margin:auto;">
+  <h2>Conversão de ml/h para mcg/kg/min ou h</h2>
+  <label for="peso2">Peso (kg):</label>
+  <input type="number" id="peso2" value="70">
+  <label for="med">Medicação:</label>
+  <select id="med"></select>
+  <label for="vel">Velocidade (ml/h):</label>
+  <input type="number" id="vel" value="5">
+  <p id="resposta"></p>
+</div>
+<script>
+const dados = [
+  {"Medicação":"Fentanil","Categoria":"Analgésico","Unidade":"mcg/kg/h","Concentração":10,"Dose Mín":0.5,"Dose Máx":5},
+  {"Medicação":"Morfina","Categoria":"Analgésico","Unidade":"mcg/h","Concentração":100,"Dose Mín":100,"Dose Máx":3500},
+  {"Medicação":"Rocurônio","Categoria":"Bloqueador Neuromuscular","Unidade":"mcg/kg/h","Concentração":1000,"Dose Mín":300,"Dose Máx":600},
+  {"Medicação":"Dobutamina","Categoria":"Inotrópico","Unidade":"mcg/kg/min","Concentração":5000,"Dose Mín":5,"Dose Máx":20}
+];
+
+function gerarTabela(peso) {
+  const container = document.getElementById("tabela-container");
+  let html = `<table><thead><tr>
+    <th>Medicação</th><th>Categoria</th><th>Unidade</th><th>Concentração (mcg/ml)</th>
+    <th>Dose Min</th><th>Dose Máx</th><th>Velocidade Min (mL/h)</th><th>Velocidade Máx (mL/h)</th>
+  </tr></thead><tbody>`;
+  dados.forEach(m => {
+    let vm, vM;
+    if (m.Unidade.includes("min")) {
+      vm = ((m.Dose Mín * peso * 60) / m.Concentração).toFixed(2);
+      vM = ((m.Dose Máx * peso * 60) / m.Concentração).toFixed(2);
+    } else if (m.Unidade.includes("h")) {
+      vm = ((m.Dose Mín * peso) / m.Concentração).toFixed(2);
+      vM = ((m.Dose Máx * peso) / m.Concentração).toFixed(2);
+    } else {
+      vm = ""; vM = "";
+    }
+    html += `<tr><td>${m.Medicação}</td><td>${m.Categoria}</td><td>${m.Unidade}</td><td>${m.Concentração}</td>
+      <td>${m["Dose Mín"]}</td><td>${m["Dose Máx"]}</td><td>${vm}</td><td>${vM}</td></tr>`;
+  });
+  html += "</tbody></table>";
+  container.innerHTML = html;
+}
+document.getElementById("peso").addEventListener("input", e => gerarTabela(e.target.value));
+gerarTabela(70);
+
+function showTab(tab) {
+  document.getElementById("tabela").style.display = tab === 'tabela' ? 'block' : 'none';
+  document.getElementById("conversor").style.display = tab === 'conversor' ? 'block' : 'none';
+  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(b => {
+    if (b.textContent.toLowerCase().includes(tab)) b.classList.add("active");
+  });
+}
+
+const sel = document.getElementById("med");
+if (sel) {
+  dados.forEach(d => {
+    const op = document.createElement("option");
+    op.value = d.Medicação;
+    op.textContent = d.Medicação;
+    sel.appendChild(op);
+  });
+}
+
+function calcularDose() {
+  const peso = parseFloat(document.getElementById("peso2").value);
+  const vel = parseFloat(document.getElementById("vel").value);
+  const med = dados.find(d => d.Medicação === document.getElementById("med").value);
+  if (!peso || !vel || !med) return;
+
+  const conc = med.Concentração;
+  const unidade = med.Unidade;
+  const doseTotal = vel * conc;
+
+  let resultado = "";
+  if (unidade.includes("min")) {
+    resultado = (doseTotal / peso / 60).toFixed(2) + " mcg/kg/min";
+  } else if (unidade.includes("h")) {
+    resultado = (doseTotal / peso).toFixed(2) + " mcg/kg/h";
+  } else {
+    resultado = doseTotal.toFixed(2) + " " + unidade;
+  }
+  document.getElementById("resposta").innerText = `Dose equivalente: ${resultado}`;
+}
+
+document.getElementById("peso2").addEventListener("input", calcularDose);
+document.getElementById("vel").addEventListener("input", calcularDose);
+document.getElementById("med").addEventListener("change", calcularDose);
+</script>
+</body>
+</html>
