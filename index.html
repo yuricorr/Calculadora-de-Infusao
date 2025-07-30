@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>Calculadora UTI</title>
+</head>
+<body>
+  <div class="tabs">
+    <button class="tab active" data-tab="diluicoes" onclick="showTab('diluicoes')">Diluições</button>
+    <button class="tab" data-tab="tabela" onclick="showTab('tabela')">Tabela</button>
+    <button class="tab" data-tab="conversor" onclick="showTab('conversor')">Conversor</button>
+  </div>
+  <div id="diluicoes" class="container">Conteúdo de Diluições</div>
+  <div id="tabela" class="container" style="display:none;">Conteúdo da Tabela</div>
+  <div id="conversor" class="container" style="display:none;">Conversor</div>
+
+  <script>
+    function showTab(tab) {
+      document.getElementById("diluicoes").style.display = tab === 'diluicoes' ? 'block' : 'none';
+      document.getElementById("tabela").style.display = tab === 'tabela' ? 'block' : 'none';
+      document.getElementById("conversor").style.display = tab === 'conversor' ? 'block' : 'none';
+      document.querySelectorAll(".tab").forEach(b => {
+        b.classList.remove("active");
+        if (b.dataset.tab === tab) b.classList.add("active");
+      });
+    }
+    showTab('diluicoes');
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(function(reg) {
+          console.log("Service worker registrado com sucesso!", reg);
+        }).catch(function(err) {
+          console.error("Falha ao registrar service worker:", err);
+        });
+    }
+  </script>
+</body>
+</html>
